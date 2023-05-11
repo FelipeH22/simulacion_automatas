@@ -42,6 +42,7 @@ class AFD():
         matriz=np.asarray([['empt' for _ in range(len(alfabeto))] for _ in range(len(estados))])
         transiciones=[re.split(':|>',x) for x in transiciones]
         for x in transiciones:
+            if x[2] not in estados: raise Exception(f"La transición {x[0]}({x[1]}) lleva al estado {x[2]} que no existe entre los estados creados")
             matriz[estados.index(x[0]),alfabeto.index(x[1])]=x[2]
         matriz,estados=self.verificarCorregirCompletitudAFD(matriz,estados)
         return matriz,estados
@@ -65,11 +66,32 @@ class AFD():
             if x not in matriz: estados_inaccesibles.append(x)
         return estados_inaccesibles
 
-    def imprimirAFDSimplificado(self):
-        print(f"estados: {self.Q}, estado inicial: {self.q0}, estados de aceptacion: {self.F}, transiciones {self.delta}")
+    def retornarTransiciones(self,matriz,estados,alfabeto):
+        transiciones=list()
+        for i in range(len(estados)):
+            for j in range(len(alfabeto)):
+                transiciones.append(f"{estados[i]}:{alfabeto[j]}>{matriz[i,j]}")
+        return transiciones
 
-    def __str__(self):
-        return f"alfabeto: {self.Sigma}, estados: {self.Q}, estado inicial: {self.q0}, estados de aceptación: {self.F}, matriz de transiciones {self.delta}"
+    def imprimirAFDSimplificado(self):
+        inaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q)
+        estados=[x for x in self.Q if x!='l' and x not in inaccesibles]
+        transiciones=self.retornarTransiciones(self.delta,self.Q,self.Sigma)
+        transiciones=[x for x in transiciones if '>l' not in x]
+        print("#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(estados)+"\n#initial\n"+f"{self.q0}\n"+ \
+        "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(transiciones))
+
+    def exportar(self,nombreArchivo):
+        contenido=self.toString()
+        with open(f"{nombreArchivo}.dfa",'w') as f:
+            f.write(contenido)
+
+    def toString(self):
+        return "#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(self.Q)+"\n#initial\n"+f"{self.q0}\n"+ \
+        "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
+
+    def __str__(self): return self.toString()
+
 
 
 a=AFD('afd.dfa')

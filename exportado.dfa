@@ -1,11 +1,13 @@
 #!dfa
 #alphabet
-a-b
+a
+b
 #states
 q0
 q1
 q2
 q3
+l
 #initial
 q0
 #accepting
@@ -18,4 +20,6 @@ q1:b>q2
 q2:a>q2
 q2:b>q3
 q3:a>q0
-
+q3:b>l
+l:a>l
+l:b>l
