@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+from graphviz import Digraph,Source
 import numpy as np
 import re
 
@@ -31,16 +33,19 @@ class AFD():
             if 'accepting' in elemento: self.F=sorted(elemento.split(' ')[1:])
             if 'transitions' in elemento: self.delta=sorted(elemento.split(' ')[1:])
         if '-' in self.Sigma[0]: self.Sigma=self.rangoLenguaje(self.Sigma[0])
-        self.delta,self.Q=self.manejoTransiciones(self.delta,self.Sigma,self.Q)
+        self.delta,self.Q=self.creacionDelta(self.delta,self.Sigma,self.Q)
         self.estadosLimbo=self.hallarEstadosLimbo(self.delta,self.Q)
-        self.estadosInaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q)
+        self.estadosInaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
 
     def rangoLenguaje(self,lenguaje):
         return [chr(caracter) for caracter in range(ord(lenguaje[0]),ord(lenguaje[-1])+1)]
 
-    def manejoTransiciones(self,transiciones,alfabeto,estados):
+    def manejarTransiciones(self,transiciones):
+        return [re.split(':|>', x) for x in transiciones]
+
+    def creacionDelta(self, transiciones, alfabeto, estados):
         matriz=np.asarray([['empt' for _ in range(len(alfabeto))] for _ in range(len(estados))])
-        transiciones=[re.split(':|>',x) for x in transiciones]
+        transiciones=self.manejarTransiciones(transiciones)
         for x in transiciones:
             if x[2] not in estados: raise Exception(f"La transición {x[0]}({x[1]}) lleva al estado {x[2]} que no existe entre los estados creados")
             matriz[estados.index(x[0]),alfabeto.index(x[1])]=x[2]
@@ -60,10 +65,10 @@ class AFD():
             if np.array_equal(matriz[i],np.array(['l','l'])): estados_limbo.append(estados[i])
         return estados_limbo
 
-    def hallarEstadosInaccesibles(self,matriz,estados):
+    def hallarEstadosInaccesibles(self,matriz,estados,estado_inicial):
         estados_inaccesibles=list()
         for x in estados:
-            if x not in matriz: estados_inaccesibles.append(x)
+            if x not in matriz and x!=estado_inicial: estados_inaccesibles.append(x)
         return estados_inaccesibles
 
     def retornarTransiciones(self,matriz,estados,alfabeto):
@@ -90,9 +95,25 @@ class AFD():
         return "#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(self.Q)+"\n#initial\n"+f"{self.q0}\n"+ \
         "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
 
-    def __str__(self): return self.toString()
+    def mostrarGrafo(self,transiciones,estados,estado_inicial,estados_finales,alfabeto):
+        transiciones=self.manejarTransiciones(self.retornarTransiciones(transiciones,estados,alfabeto))
+        g=Digraph(strict=False)
+        g.attr(rankdir="LR")
+        g.node('i',label='',shape="point")
+        g.edge('i',estado_inicial,arrowsize='0.5')
+        for x in estados:
+            if x in estados_finales: g.node(x,shape="doublecircle")
+            else: g.node(x,shape="circle")
+        for x in transiciones:
+            g.edge(x[0],x[2],label=x[1],arrowsize='0.5')
+        s=Source(g.source,filename="grafo", format="svg")
+        s.view()
+
+    def __str__(self):
+        self.mostrarGrafo(self.delta,self.Q,self.q0,self.F,self.Sigma)
+        return self.toString()
 
 
 
 a=AFD('afd.dfa')
-a.imprimirAFDSimplificado()
+print(a)
