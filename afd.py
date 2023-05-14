@@ -32,9 +32,11 @@ class AFD():
             if 'initial' in elemento: self.q0=elemento.split(' ')[1]
             if 'accepting' in elemento: self.F=sorted(elemento.split(' ')[1:])
             if 'transitions' in elemento: self.delta=sorted(elemento.split(' ')[1:])
-        if '-' in self.Sigma[0]: self.Sigma=self.rangoLenguaje(self.Sigma[0])
+        if '-' in self.Sigma[0]: self.Sigma=[*self.Sigma,*self.rangoLenguaje(self.Sigma[0])]
+        self.Sigma.pop(0)
+        self.Sigma=sorted(self.Sigma)
         self.delta,self.Q=self.creacionDelta(self.delta,self.Sigma,self.Q)
-        self.estadosLimbo=self.hallarEstadosLimbo(self.delta,self.Q)
+        self.estadosLimbo=self.hallarEstadosLimbo(self.delta,self.Q,self.Sigma)
         self.estadosInaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
 
     def rangoLenguaje(self,lenguaje):
@@ -49,20 +51,20 @@ class AFD():
         for x in transiciones:
             if x[2] not in estados: raise Exception(f"La transición {x[0]}({x[1]}) lleva al estado {x[2]} que no existe entre los estados creados")
             matriz[estados.index(x[0]),alfabeto.index(x[1])]=x[2]
-        matriz,estados=self.verificarCorregirCompletitudAFD(matriz,estados)
+        matriz,estados=self.verificarCorregirCompletitudAFD(matriz,estados,alfabeto)
         return matriz,estados
 
-    def verificarCorregirCompletitudAFD(self,matriz,estados):
+    def verificarCorregirCompletitudAFD(self,matriz,estados,alfabeto):
         if 'empt' in matriz:
             estados.append('l')
             matriz[matriz=='empt']='l'
-            matriz=np.vstack((matriz,['l','l']))
+            matriz=np.vstack((matriz,['l' for _ in range(len(alfabeto))]))
         return matriz,estados
 
-    def hallarEstadosLimbo(self,matriz,estados):
+    def hallarEstadosLimbo(self,matriz,estados,alfabeto):
         estados_limbo=list()
         for i in range(len(matriz)):
-            if np.array_equal(matriz[i],np.array(['l','l'])): estados_limbo.append(estados[i])
+            if np.array_equal(matriz[i],np.array(['l' for _ in range(len(alfabeto))])): estados_limbo.append(estados[i])
         return estados_limbo
 
     def hallarEstadosInaccesibles(self,matriz,estados,estado_inicial):
@@ -79,7 +81,8 @@ class AFD():
         return transiciones
 
     def imprimirAFDSimplificado(self):
-        inaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q)
+        self.mostrarGrafoSimplificado(self.delta,self.Q,self.q0,self.F,self.Sigma)
+        inaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
         estados=[x for x in self.Q if x!='l' and x not in inaccesibles]
         transiciones=self.retornarTransiciones(self.delta,self.Q,self.Sigma)
         transiciones=[x for x in transiciones if '>l' not in x]
@@ -92,8 +95,25 @@ class AFD():
             f.write(contenido)
 
     def toString(self):
+        self.mostrarGrafo(self.delta, self.Q, self.q0, self.F, self.Sigma)
         return "#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(self.Q)+"\n#initial\n"+f"{self.q0}\n"+ \
         "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
+
+    def mostrarGrafoSimplificado(self,transiciones,estados,estado_inicial,estados_finales,alfabeto):
+        transiciones = self.manejarTransiciones(self.retornarTransiciones(transiciones, estados, alfabeto))
+        g_s=Digraph(strict=False)
+        g_s.attr(rankdir="LR")
+        g_s.node('i', label='', shape="point")
+        g_s.edge('i', estado_inicial, arrowsize='0.5')
+        for x in estados:
+            if x in estados_finales:
+                g_s.node(x, shape="doublecircle")
+            elif x!='l':
+                g_s.node(x, shape="circle")
+        for x in transiciones:
+            if 'l' not in x: g_s.edge(x[0], x[2], label=x[1], arrowsize='0.5')
+        s = Source(g_s.source, filename="grafo_s", format="svg")
+        s.view()
 
     def mostrarGrafo(self,transiciones,estados,estado_inicial,estados_finales,alfabeto):
         transiciones=self.manejarTransiciones(self.retornarTransiciones(transiciones,estados,alfabeto))
@@ -106,14 +126,13 @@ class AFD():
             else: g.node(x,shape="circle")
         for x in transiciones:
             g.edge(x[0],x[2],label=x[1],arrowsize='0.5')
-        s=Source(g.source,filename="grafo", format="svg")
+        s=Source(g.source,filename="grafo",format="svg")
         s.view()
 
-    def __str__(self):
-        self.mostrarGrafo(self.delta,self.Q,self.q0,self.F,self.Sigma)
-        return self.toString()
+    def __str__(self): return self.toString()
 
 
 
 a=AFD('afd.dfa')
+a.imprimirAFDSimplificado()
 print(a)

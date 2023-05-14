@@ -5,13 +5,9 @@ digraph {
 	q0 [shape=circle]
 	q1 [shape=circle]
 	q2 [shape=doublecircle]
-	l [shape=circle]
 	q0 -> q1 [label=a arrowsize=0.5]
 	q0 -> q2 [label=b arrowsize=0.5]
 	q1 -> q1 [label=a arrowsize=0.5]
 	q1 -> q2 [label=b arrowsize=0.5]
-	q2 -> l [label=a arrowsize=0.5]
 	q2 -> q2 [label=b arrowsize=0.5]
-	l -> l [label=a arrowsize=0.5]
-	l -> l [label=b arrowsize=0.5]
 }
