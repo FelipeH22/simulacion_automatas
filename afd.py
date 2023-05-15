@@ -199,9 +199,11 @@ class AFD():
         resultado.delta,resultado.Q=resultado.creacionDelta(resultado.delta,resultado.Sigma,resultado.Q)
         resultado.q0=f"{{{afd1.q0},{afd2.q0}}}"
         resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
-        """for x in resultado.estadosInaccesibles:
-            np.delete(resultado.delta,resultado.Q.index(x),0)
-            resultado.Q.remove(x)"""
+        while resultado.estadosInaccesibles:
+            x=resultado.estadosInaccesibles[0]
+            resultado.delta=np.delete(resultado.delta,resultado.Q.index(x),0)
+            resultado.Q.remove(x)
+            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
         return resultado
 
 
@@ -210,4 +212,5 @@ class AFD():
 a=AFD('afd.dfa')
 b=AFD('afd1.dfa')
 c=a.hallarProductoCartesianoY(a,b)
-c.procesarCadenaConDetalles('0000100101010010101')
+print(c.procesarCadena('001100101010010101'))
+print(c)
