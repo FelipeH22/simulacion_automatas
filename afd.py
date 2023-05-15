@@ -191,6 +191,8 @@ class AFD():
                 for elemento in resultado.Sigma:
                     nuevas_transiciones.append(f"{{{estado_a1},{estado_a2}}}:{elemento}>{{{afd1.delta[afd1.Q.index(estado_a1),afd1.Sigma.index(elemento)]},"
                                                f"{afd2.delta[afd2.Q.index(estado_a2),afd2.Sigma.index(elemento)]}}}")
+                    print(f"\u03B4(({estado_a1},{estado_a2}),{elemento}) = (\u03B4\N{SUBSCRIPT ONE}({estado_a1},{elemento}),\u03B4\N{SUBSCRIPT TWO}({estado_a2},{elemento}))="
+                          f"({afd1.delta[afd1.Q.index(estado_a1),afd1.Sigma.index(elemento)]},{afd2.delta[afd2.Q.index(estado_a2),afd2.Sigma.index(elemento)]}),")
                 estados.append(f"{{{estado_a1},{estado_a2}}}")
                 if estado_a1 in afd1.F and estado_a2 in afd2.F: estados_finales.append(f"{{{estado_a1},{estado_a2}}}")
         resultado.Q=estados
@@ -206,11 +208,8 @@ class AFD():
             resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
         return resultado
 
-
     def __str__(self): return self.toString()
 
 a=AFD('afd.dfa')
 b=AFD('afd1.dfa')
 c=a.hallarProductoCartesianoY(a,b)
-print(c.procesarCadena('001100101010010101'))
-print(c)
