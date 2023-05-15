@@ -48,8 +48,8 @@ class AFD():
     def manejarTransiciones(self,transiciones):
         return [re.split(':|>', x) for x in transiciones]
 
-    def creacionDelta(self, transiciones,alfabeto,estados):
-        matriz=np.asarray([['empt' for _ in range(len(alfabeto))] for _ in range(len(estados))])
+    def creacionDelta(self,transiciones,alfabeto,estados):
+        matriz=np.asarray([['empt' for _ in range(len(alfabeto))] for _ in range(len(estados))],dtype=np.dtype('U100'))
         transiciones=self.manejarTransiciones(transiciones)
         for x in transiciones:
             if x[2] not in estados: raise Exception(f"La transición {x[0]}({x[1]}) lleva al estado {x[2]} que no existe entre los estados creados")
@@ -73,7 +73,7 @@ class AFD():
     def hallarEstadosInaccesibles(self,matriz,estados,estado_inicial):
         estados_inaccesibles=list()
         for x in estados:
-            if x not in matriz and x!=estado_inicial: estados_inaccesibles.append(x)
+            if (x not in matriz or (len(np.where(matriz==x)[0].tolist())==1 and np.where(matriz==x)[0].tolist()==[estados.index(x)])) and x!=estado_inicial: estados_inaccesibles.append(x)
         return estados_inaccesibles
 
     def retornarTransiciones(self,matriz,estados,alfabeto):
@@ -103,19 +103,19 @@ class AFD():
         "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
 
     def mostrarGrafoSimplificado(self,archivo="grafo_s"):
-        transiciones = self.manejarTransiciones(self.retornarTransiciones(self.delta, self.Q, self.Sigma))
+        transiciones=self.manejarTransiciones(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
         g_s=Digraph(strict=False)
         g_s.attr(rankdir="LR")
-        g_s.node('i', label='', shape="point")
-        g_s.edge('i', self.q0, arrowsize='0.5')
+        g_s.node('i',label='',shape="point")
+        g_s.edge('i',self.q0,arrowsize='0.5')
         for x in self.Q:
             if x in self.F:
-                g_s.node(x, shape="doublecircle")
-            elif x!='l':
-                g_s.node(x, shape="circle")
+                g_s.node(x,shape="doublecircle")
+            elif x!='l' and x not in self.estadosInaccesibles:
+                g_s.node(x,shape="circle")
         for x in transiciones:
-            if 'l' not in x: g_s.edge(x[0], x[2], label=x[1], arrowsize='0.5')
-        s = Source(g_s.source, filename=archivo, format="svg")
+            if 'l' not in x and x[0] not in self.estadosInaccesibles and x[2] not in self.estadosInaccesibles: g_s.edge(x[0],x[2],label=x[1],arrowsize='0.5')
+        s=Source(g_s.source,filename=archivo,format="svg")
         s.view()
 
     def mostrarGrafo(self,archivo="grafo"):
@@ -181,7 +181,33 @@ class AFD():
             else: b.F.remove(estado)
         return b
 
+    def hallarProductoCartesianoY(self,afd1,afd2):
+        estados=list()
+        estados_finales=list()
+        nuevas_transiciones=list()
+        resultado=copy.deepcopy(afd1)
+        for estado_a1 in afd1.Q:
+            for estado_a2 in afd2.Q:
+                for elemento in resultado.Sigma:
+                    nuevas_transiciones.append(f"{{{estado_a1},{estado_a2}}}:{elemento}>{{{afd1.delta[afd1.Q.index(estado_a1),afd1.Sigma.index(elemento)]},"
+                                               f"{afd2.delta[afd2.Q.index(estado_a2),afd2.Sigma.index(elemento)]}}}")
+                estados.append(f"{{{estado_a1},{estado_a2}}}")
+                if estado_a1 in afd1.F and estado_a2 in afd2.F: estados_finales.append(f"{{{estado_a1},{estado_a2}}}")
+        resultado.Q=estados
+        resultado.F=estados_finales
+        resultado.delta=nuevas_transiciones
+        resultado.delta,resultado.Q=resultado.creacionDelta(resultado.delta,resultado.Sigma,resultado.Q)
+        resultado.q0=f"{{{afd1.q0},{afd2.q0}}}"
+        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+        """for x in resultado.estadosInaccesibles:
+            np.delete(resultado.delta,resultado.Q.index(x),0)
+            resultado.Q.remove(x)"""
+        return resultado
+
+
     def __str__(self): return self.toString()
 
 a=AFD('afd.dfa')
-a_complemento=a.hallarComplemento(a)
+b=AFD('afd1.dfa')
+c=a.hallarProductoCartesianoY(a,b)
+c.procesarCadenaConDetalles('0000100101010010101')
