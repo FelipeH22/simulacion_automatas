@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from graphviz import Digraph,Source
 import numpy as np
+import copy
 import re
 
 class AFD():
@@ -11,6 +12,7 @@ class AFD():
     q0=str()
     F=list()
     delta=list()
+
     def __init__(self,alfabeto,estados,estadoInicial,estadosAceptacion,delta):
         self.Sigma=alfabeto
         self.Q=estados
@@ -82,7 +84,7 @@ class AFD():
         return transiciones
 
     def imprimirAFDSimplificado(self):
-        self.mostrarGrafoSimplificado(self.delta,self.Q,self.q0,self.F,self.Sigma)
+        self.mostrarGrafoSimplificado()
         inaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
         estados=[x for x in self.Q if x!='l' and x not in inaccesibles]
         transiciones=self.retornarTransiciones(self.delta,self.Q,self.Sigma)
@@ -96,38 +98,38 @@ class AFD():
             f.write(contenido)
 
     def toString(self):
-        self.mostrarGrafo(self.delta, self.Q, self.q0, self.F, self.Sigma)
+        self.mostrarGrafo()
         return "#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(self.Q)+"\n#initial\n"+f"{self.q0}\n"+ \
         "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
 
-    def mostrarGrafoSimplificado(self,transiciones,estados,estado_inicial,estados_finales,alfabeto):
-        transiciones = self.manejarTransiciones(self.retornarTransiciones(transiciones, estados, alfabeto))
+    def mostrarGrafoSimplificado(self,archivo="grafo_s"):
+        transiciones = self.manejarTransiciones(self.retornarTransiciones(self.delta, self.Q, self.Sigma))
         g_s=Digraph(strict=False)
         g_s.attr(rankdir="LR")
         g_s.node('i', label='', shape="point")
-        g_s.edge('i', estado_inicial, arrowsize='0.5')
-        for x in estados:
-            if x in estados_finales:
+        g_s.edge('i', self.q0, arrowsize='0.5')
+        for x in self.Q:
+            if x in self.F:
                 g_s.node(x, shape="doublecircle")
             elif x!='l':
                 g_s.node(x, shape="circle")
         for x in transiciones:
             if 'l' not in x: g_s.edge(x[0], x[2], label=x[1], arrowsize='0.5')
-        s = Source(g_s.source, filename="grafo_s", format="svg")
+        s = Source(g_s.source, filename=archivo, format="svg")
         s.view()
 
-    def mostrarGrafo(self,transiciones,estados,estado_inicial,estados_finales,alfabeto):
-        transiciones=self.manejarTransiciones(self.retornarTransiciones(transiciones,estados,alfabeto))
+    def mostrarGrafo(self,archivo="grafo"):
+        transiciones=self.manejarTransiciones(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
         g=Digraph(strict=False)
         g.attr(rankdir="LR")
         g.node('i',label='',shape="point")
-        g.edge('i',estado_inicial,arrowsize='0.5')
-        for x in estados:
-            if x in estados_finales: g.node(x,shape="doublecircle")
+        g.edge('i',self.q0,arrowsize='0.5')
+        for x in self.Q:
+            if x in self.F: g.node(x,shape="doublecircle")
             else: g.node(x,shape="circle")
         for x in transiciones:
             g.edge(x[0],x[2],label=x[1],arrowsize='0.5')
-        s=Source(g.source,filename="grafo",format="svg")
+        s=Source(g.source,filename=archivo,format="svg")
         s.view()
 
     def procesarCadena(self,cadena):
@@ -172,4 +174,14 @@ class AFD():
                 file.write("\n".join(proceso))
                 print(f"El nombre de archivo '{nombreArchivo}' es invalido, guardando en salidaProcesamiento.txt")
 
+    def hallarComplemento(self,afdInput):
+        b=copy.deepcopy(afdInput)
+        for estado in b.Q:
+            if estado not in b.F: b.F.append(estado)
+            else: b.F.remove(estado)
+        return b
+
     def __str__(self): return self.toString()
+
+a=AFD('afd.dfa')
+a_complemento=a.hallarComplemento(a)
