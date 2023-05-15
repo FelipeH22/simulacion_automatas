@@ -32,9 +32,10 @@ class AFD():
             if 'initial' in elemento: self.q0=elemento.split(' ')[1]
             if 'accepting' in elemento: self.F=sorted(elemento.split(' ')[1:])
             if 'transitions' in elemento: self.delta=sorted(elemento.split(' ')[1:])
-        if '-' in self.Sigma[0]: self.Sigma=[*self.Sigma,*self.rangoLenguaje(self.Sigma[0])]
-        self.Sigma.pop(0)
-        self.Sigma=sorted(self.Sigma)
+        if '-' in self.Sigma[0]:
+            self.Sigma=[*self.Sigma,*self.rangoLenguaje(self.Sigma[0])]
+            self.Sigma.pop(0)
+            self.Sigma=sorted(self.Sigma)
         self.delta,self.Q=self.creacionDelta(self.delta,self.Sigma,self.Q)
         self.estadosLimbo=self.hallarEstadosLimbo(self.delta,self.Q,self.Sigma)
         self.estadosInaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
@@ -45,7 +46,7 @@ class AFD():
     def manejarTransiciones(self,transiciones):
         return [re.split(':|>', x) for x in transiciones]
 
-    def creacionDelta(self, transiciones, alfabeto, estados):
+    def creacionDelta(self, transiciones,alfabeto,estados):
         matriz=np.asarray([['empt' for _ in range(len(alfabeto))] for _ in range(len(estados))])
         transiciones=self.manejarTransiciones(transiciones)
         for x in transiciones:
@@ -129,10 +130,46 @@ class AFD():
         s=Source(g.source,filename="grafo",format="svg")
         s.view()
 
+    def procesarCadena(self,cadena):
+        estado_actual = self.q0
+        for elemento in cadena:
+            estado_actual = self.delta[self.Q.index(estado_actual), self.Sigma.index(elemento)]
+        if estado_actual in self.F: return True
+        return False
+
+    def procesarCadenaConDetalles(self,cadena):
+        estado_actual=self.q0
+        cadena_=cadena
+        for elemento in cadena:
+            if cadena_!='': print(f"[{estado_actual},{cadena_}]", end=" -> ")
+            estado_actual=self.delta[self.Q.index(estado_actual),self.Sigma.index(elemento)]
+            cadena_=cadena_[1:]
+        if estado_actual in self.F:
+            print("Aceptación")
+            return True
+        print("No Aceptación")
+        return False
+
+    def procesarListaCadenas(self,listaCadenas,nombreArchivo,imprimirPantalla):
+        proceso=list()
+        for cadena in listaCadenas:
+            resultado=str()
+            estado_actual=self.q0
+            cadena_=cadena
+            for elemento in cadena:
+                if cadena_!='':resultado+=f"[{estado_actual},{cadena_}] -> "
+                estado_actual=self.delta[self.Q.index(estado_actual),self.Sigma.index(elemento)]
+                cadena_=cadena_[1:]
+            if estado_actual in self.F:resultado+='si'
+            else: resultado+='no'
+            proceso.append(resultado)
+            if imprimirPantalla: print(resultado)
+        try:
+            with open(nombreArchivo,'w') as file:
+                file.write("\n".join(proceso))
+        except:
+            with open("salidaProcesamiento.txt",'w') as file:
+                file.write("\n".join(proceso))
+                print(f"El nombre de archivo '{nombreArchivo}' es invalido, guardando en salidaProcesamiento.txt")
+
     def __str__(self): return self.toString()
-
-
-
-a=AFD('afd.dfa')
-a.imprimirAFDSimplificado()
-print(a)
