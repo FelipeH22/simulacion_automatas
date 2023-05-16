@@ -27,8 +27,6 @@ class AFD():
         while '' in contenido: contenido.remove('')
         contenido=list(map(lambda x: x.strip(),contenido))
         for elemento in contenido:
-            if '!' in elemento:
-                if elemento[1:].strip()!='dfa': raise Exception('El archivo leído no corresponde a un AFD')
             if 'alphabet' in elemento: self.Sigma=sorted(elemento.split(' ')[1:])
             if 'states' in elemento: self.Q=sorted(elemento.split(' ')[1:])
             if 'initial' in elemento: self.q0=elemento.split(' ')[1]
@@ -38,9 +36,9 @@ class AFD():
             self.Sigma=[*self.Sigma,*self.rangoLenguaje(self.Sigma[0])]
             self.Sigma.pop(0)
             self.Sigma=sorted(self.Sigma)
-        self.delta,self.Q=self.creacionDelta(self.delta,self.Sigma,self.Q)
-        self.estadosLimbo=self.hallarEstadosLimbo(self.delta,self.Q,self.Sigma)
-        self.estadosInaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
+        self.creacionDelta()
+        self.estadosLimbo=self.hallarEstadosLimbo()
+        self.estadosInaccesibles=self.hallarEstadosInaccesibles()
 
     def rangoLenguaje(self,lenguaje):
         return [chr(caracter) for caracter in range(ord(lenguaje[0]),ord(lenguaje[-1])+1)]
@@ -48,46 +46,45 @@ class AFD():
     def manejarTransiciones(self,transiciones):
         return [re.split(':|>', x) for x in transiciones]
 
-    def creacionDelta(self,transiciones,alfabeto,estados):
-        matriz=np.asarray([['empt' for _ in range(len(alfabeto))] for _ in range(len(estados))],dtype=np.dtype('U100'))
-        transiciones=self.manejarTransiciones(transiciones)
+    def creacionDelta(self):
+        matriz=np.asarray([['empt' for _ in range(len(self.Sigma))] for _ in range(len(self.Q))],dtype=np.dtype('U100'))
+        transiciones=self.manejarTransiciones(self.delta)
         for x in transiciones:
-            if x[2] not in estados: raise Exception(f"La transición {x[0]}({x[1]}) lleva al estado {x[2]} que no existe entre los estados creados")
-            matriz[estados.index(x[0]),alfabeto.index(x[1])]=x[2]
-        matriz,estados=self.verificarCorregirCompletitudAFD(matriz,estados,alfabeto)
-        return matriz,estados
+            matriz[self.Q.index(x[0]),self.Sigma.index(x[1])]=x[2]
+        self.delta=matriz
+        self.verificarCorregirCompletitudAFD()
 
-    def verificarCorregirCompletitudAFD(self,matriz,estados,alfabeto):
-        if 'empt' in matriz:
-            estados.append('l')
-            matriz[matriz=='empt']='l'
-            matriz=np.vstack((matriz,['l' for _ in range(len(alfabeto))]))
-        return matriz,estados
+    def verificarCorregirCompletitudAFD(self):
+        if 'empt' in self.delta:
+            self.Q.append('l')
+            self.delta[self.delta=='empt']='l'
+            self.delta=np.vstack((self.delta,['l' for _ in range(len(self.Sigma))]))
+        return self.delta,self.Q
 
-    def hallarEstadosLimbo(self,matriz,estados,alfabeto):
+    def hallarEstadosLimbo(self):
         estados_limbo=list()
-        for i in range(len(matriz)):
-            if np.array_equal(matriz[i],np.array(['l' for _ in range(len(alfabeto))])): estados_limbo.append(estados[i])
+        for i in range(len(self.delta)):
+            if np.array_equal(self.delta[i],np.array(['l' for _ in range(len(self.Sigma))])): estados_limbo.append(self.Q[i])
         return estados_limbo
 
-    def hallarEstadosInaccesibles(self,matriz,estados,estado_inicial):
+    def hallarEstadosInaccesibles(self):
         estados_inaccesibles=list()
-        for x in estados:
-            if (x not in matriz or (len(np.where(matriz==x)[0].tolist())==1 and np.where(matriz==x)[0].tolist()==[estados.index(x)])) and x!=estado_inicial: estados_inaccesibles.append(x)
+        for x in self.Q:
+            if (x not in self.delta or (len(np.where(self.delta==x)[0].tolist())==1 and np.where(self.delta==x)[0].tolist()==[self.Q.index(x)])) and x!=self.q0: estados_inaccesibles.append(x)
         return estados_inaccesibles
 
-    def retornarTransiciones(self,matriz,estados,alfabeto):
+    def retornarTransiciones(self):
         transiciones=list()
-        for i in range(len(estados)):
-            for j in range(len(alfabeto)):
-                transiciones.append(f"{estados[i]}:{alfabeto[j]}>{matriz[i,j]}")
+        for i in range(len(self.Q)):
+            for j in range(len(self.Sigma)):
+                transiciones.append(f"{self.Q[i]}:{self.Sigma[j]}>{self.delta[i,j]}")
         return transiciones
 
     def imprimirAFDSimplificado(self):
         self.mostrarGrafoSimplificado()
-        inaccesibles=self.hallarEstadosInaccesibles(self.delta,self.Q,self.q0)
+        inaccesibles=self.hallarEstadosInaccesibles()
         estados=[x for x in self.Q if x!='l' and x not in inaccesibles]
-        transiciones=self.retornarTransiciones(self.delta,self.Q,self.Sigma)
+        transiciones=self.retornarTransiciones()
         transiciones=[x for x in transiciones if '>l' not in x]
         print("#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(estados)+"\n#initial\n"+f"{self.q0}\n"+ \
         "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(transiciones))
@@ -100,10 +97,10 @@ class AFD():
     def toString(self):
         self.mostrarGrafo()
         return "#!dfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(self.Q)+"\n#initial\n"+f"{self.q0}\n"+ \
-        "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
+        "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones())
 
     def mostrarGrafoSimplificado(self,archivo="grafo_s"):
-        transiciones=self.manejarTransiciones(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
+        transiciones=self.manejarTransiciones(self.retornarTransiciones())
         g_s=Digraph(strict=False)
         g_s.attr(rankdir="LR")
         g_s.node('i',label='',shape="point")
@@ -119,7 +116,7 @@ class AFD():
         s.view()
 
     def mostrarGrafo(self,archivo="grafo"):
-        transiciones=self.manejarTransiciones(self.retornarTransiciones(self.delta,self.Q,self.Sigma))
+        transiciones=self.manejarTransiciones(self.retornarTransiciones())
         g=Digraph(strict=False)
         g.attr(rankdir="LR")
         g.node('i',label='',shape="point")
@@ -198,14 +195,14 @@ class AFD():
         resultado.Q=estados
         resultado.F=estados_finales
         resultado.delta=nuevas_transiciones
-        resultado.delta,resultado.Q=resultado.creacionDelta(resultado.delta,resultado.Sigma,resultado.Q)
+        resultado.creacionDelta()
         resultado.q0=f"{{{afd1.q0},{afd2.q0}}}"
-        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         while resultado.estadosInaccesibles:
             x=resultado.estadosInaccesibles[0]
             resultado.delta=np.delete(resultado.delta,resultado.Q.index(x),0)
             resultado.Q.remove(x)
-            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         return resultado
 
     def hallarProductoCartesianoO(self,afd1,afd2):
@@ -225,14 +222,14 @@ class AFD():
         resultado.Q=estados
         resultado.F=estados_finales
         resultado.delta=nuevas_transiciones
-        resultado.delta,resultado.Q=resultado.creacionDelta(resultado.delta,resultado.Sigma,resultado.Q)
+        resultado.creacionDelta()
         resultado.q0=f"{{{afd1.q0},{afd2.q0}}}"
-        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         while resultado.estadosInaccesibles:
             x=resultado.estadosInaccesibles[0]
             resultado.delta=np.delete(resultado.delta,resultado.Q.index(x),0)
             resultado.Q.remove(x)
-            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         return resultado
 
     def hallarProductoCartesianoDiferencia(self,afd1,afd2):
@@ -252,14 +249,14 @@ class AFD():
         resultado.Q=estados
         resultado.F=estados_finales
         resultado.delta=nuevas_transiciones
-        resultado.delta,resultado.Q=resultado.creacionDelta(resultado.delta,resultado.Sigma,resultado.Q)
+        resultado.creacionDelta()
         resultado.q0=f"{{{afd1.q0},{afd2.q0}}}"
-        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         while resultado.estadosInaccesibles:
             x=resultado.estadosInaccesibles[0]
             resultado.delta=np.delete(resultado.delta,resultado.Q.index(x),0)
             resultado.Q.remove(x)
-            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         return resultado
 
     def hallarProductoCartesianoDiferenciaSimetrica(self,afd1,afd2):
@@ -279,14 +276,14 @@ class AFD():
         resultado.Q=estados
         resultado.F=estados_finales
         resultado.delta=nuevas_transiciones
-        resultado.delta,resultado.Q=resultado.creacionDelta(resultado.delta,resultado.Sigma,resultado.Q)
+        resultado.creacionDelta()
         resultado.q0=f"{{{afd1.q0},{afd2.q0}}}"
-        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+        resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         while resultado.estadosInaccesibles:
             x=resultado.estadosInaccesibles[0]
             resultado.delta=np.delete(resultado.delta,resultado.Q.index(x),0)
             resultado.Q.remove(x)
-            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles(resultado.delta,resultado.Q,resultado.q0)
+            resultado.estadosInaccesibles=resultado.hallarEstadosInaccesibles()
         return resultado
 
     def hallarProductoCartesiano(self,afd1,afd2,operacion):
@@ -299,9 +296,9 @@ class AFD():
 
     def __str__(self): return self.toString()
 
-a=AFD('afd.dfa')
-b=AFD('afd1.dfa')
-c=a.hallarProductoCartesiano(a,b,"diferencia simétrica")
+a = AFD('afd.dfa')
+b = AFD('afd1.dfa')
+c = a.hallarProductoCartesiano(a,b,"interseccion")
 print(c.procesarCadena("110111"))
 print(c.procesarCadena("00111"))
 print(c.procesarCadena("000111"))
