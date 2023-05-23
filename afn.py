@@ -23,7 +23,6 @@ class AFN(AFD):
         landing_states=[x[2] for x in transiciones]
         return [x for x in self.Q if x not in landing_states]
 
-
     def retornarTransiciones(self):
         transiciones=list()
         for i in range(len(self.Q)):
@@ -31,7 +30,7 @@ class AFN(AFD):
                 transiciones.append(f"{self.Q[i]}:{self.Sigma[j]}>{self.delta[i,j]}")
         return transiciones
 
-    def imprimirAFDSimplificado(self):
+    def imprimirAFNSimplificado(self):
         self.mostrarGrafoSimplificado()
         inaccesibles=self.hallarEstadosInaccesibles()
         estados=[x for x in self.Q if x!='l' and x not in inaccesibles]
@@ -41,14 +40,9 @@ class AFN(AFD):
         "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(transiciones))
 
     def exportar(self,nombreArchivo):
-        contenido=self.toString()
+        contenido="#!nfa"+self.toString()[5:]
         with open(f"{nombreArchivo}.nfa",'w') as f:
             f.write(contenido)
-
-    def toString(self):
-        self.mostrarGrafo()
-        return "#!nfa\n"+"#alphabet\n"+"\n".join(self.Sigma)+"\n#states\n"+"\n".join(self.Q)+"\n#initial\n"+f"{self.q0}\n"+ \
-        "#accepting\n"+"\n".join(self.F)+"\n#transitions\n"+"\n".join(self.retornarTransiciones())
 
     def mostrarGrafoSimplificado(self,archivo="grafo_s"):
         transiciones=self.manejarTransiciones(self.retornarTransiciones())
@@ -82,25 +76,39 @@ class AFN(AFD):
         s=Source(g.source,filename=archivo,format="svg")
         s.view()
 
-    def procesarCadena(self,cadena):
-        estado_actual = self.q0
-        for elemento in cadena:
-            estado_actual = self.delta[self.Q.index(estado_actual), self.Sigma.index(elemento)]
-        if estado_actual in self.F: return True
-        return False
+    def AFNtoAFD(self, afn):
+        alfabeto=afn.Sigma
+        estados=afn.Q
+        estadoInicial=afn.q0
+        estadosAceptacion=afn.F
+        transiciones=afn.delta
+        previous_size=transiciones.shape
+        current_size=(0,0)
+        while previous_size!=current_size:
+            previous_size = transiciones.shape
+            for i in range(len(estados)):
+                for j in range(len(alfabeto)):
+                    if ";" in transiciones[i][j] and transiciones[i][j] not in estados:
+                        estados.append(transiciones[i][j])
+                        transiciones = np.vstack((transiciones, ["empt" for _ in range(len(alfabeto))]))
+                        est=transiciones[i][j].split(";")
+                        for x in est:
+                            for z in range(len(alfabeto)):
+                                if transiciones[-1,z]=="empt" or transiciones[-1,z]=='l': transiciones[-1,z]=transiciones[estados.index(x),z]
+                                elif transiciones[-1,z]!='l':
+                                    if 'l' in transiciones[estados.index(x), z]: continue
+                                    transiciones[-1,z]=transiciones[-1,z]+";"+transiciones[estados.index(x),z]
+            current_size=transiciones.shape
+        afd_equivalente=AFD(alfabeto,estados,estadoInicial,estadosAceptacion,transiciones)
+        return afd_equivalente
 
+
+
+
+    def procesarCadena(self,cadena):
+        pass
     def procesarCadenaConDetalles(self,cadena):
-        estado_actual=self.q0
-        cadena_=cadena
-        for elemento in cadena:
-            if cadena_!='': print(f"[{estado_actual},{cadena_}]", end=" -> ")
-            estado_actual=self.delta[self.Q.index(estado_actual),self.Sigma.index(elemento)]
-            cadena_=cadena_[1:]
-        if estado_actual in self.F:
-            print("Aceptación")
-            return True
-        print("No Aceptación")
-        return False
+        pass
 
     def procesarListaCadenas(self,listaCadenas,nombreArchivo,imprimirPantalla):
         proceso=list()
@@ -124,16 +132,8 @@ class AFN(AFD):
                 file.write("\n".join(proceso))
                 print(f"El nombre de archivo '{nombreArchivo}' es invalido, guardando en salidaProcesamiento.txt")
 
-    def hallarComplemento(self,afdInput):
-        b=copy.deepcopy(afdInput)
-        for estado in b.Q:
-            if estado not in b.F: b.F.append(estado)
-            else: b.F.remove(estado)
-        return b
-
-    def __str__(self): return self.toString()
+    def __str__(self): return "#!nfa"+self.toString()[5:]
 
 a=AFN('afn.nfa')
-print(a)
-print(a.hallarEstadosInaccesibles())
-a.mostrarGrafoSimplificado()
+afd_e=a.AFNtoAFD(a)
+print(afd_e)
