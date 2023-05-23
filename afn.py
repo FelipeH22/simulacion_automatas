@@ -77,11 +77,12 @@ class AFN(AFD):
         s.view()
 
     def AFNtoAFD(self, afn):
-        alfabeto=afn.Sigma
-        estados=afn.Q
-        estadoInicial=afn.q0
-        estadosAceptacion=afn.F
-        transiciones=afn.delta
+        afd=copy.deepcopy(afn)
+        alfabeto=afd.Sigma
+        estados=afd.Q
+        estadoInicial=afd.q0
+        estadosAceptacion=afd.F
+        transiciones=afd.delta
         previous_size=transiciones.shape
         current_size=(0,0)
         while previous_size!=current_size:
@@ -99,14 +100,16 @@ class AFN(AFD):
                                     if 'l' in transiciones[estados.index(x), z]: continue
                                     transiciones[-1,z]=transiciones[-1,z]+";"+transiciones[estados.index(x),z]
             current_size=transiciones.shape
-        afd_equivalente=AFD(alfabeto,estados,estadoInicial,estadosAceptacion,transiciones)
+        afd.delta=transiciones
+        transiciones=afd.retornarTransiciones()
+        afd_equivalente=AFD(alfabeto=alfabeto,estados=estados,estadoInicial=estadoInicial,estadosAceptacion=estadosAceptacion,transiciones=transiciones)
+        afd_equivalente.eliminarEstadosInaccesibles()
+        afd_equivalente.eliminarEstadosLimbo()
         return afd_equivalente
-
-
-
 
     def procesarCadena(self,cadena):
         pass
+
     def procesarCadenaConDetalles(self,cadena):
         pass
 
@@ -134,6 +137,6 @@ class AFN(AFD):
 
     def __str__(self): return "#!nfa"+self.toString()[5:]
 
-a=AFN('afn.nfa')
+a=AFN(nombreArchivo="afn.nfa")
 afd_e=a.AFNtoAFD(a)
 print(afd_e)

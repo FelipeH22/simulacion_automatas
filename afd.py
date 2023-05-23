@@ -14,32 +14,37 @@ class AFD:
     F = list()
     delta = list()
 
-    def __init__(self, alfabeto, estados, estadoInicial, estadosAceptacion, delta):
-        self.Sigma = alfabeto
-        self.Q = estados
-        self.q0 = estadoInicial
-        self.F = estadosAceptacion
-        self.delta = delta
+    def __init__(self, **kwargs):
+        if "nombreArchivo" in kwargs:
+            with open(kwargs.get("nombreArchivo")) as f:
+                contenido = f.readlines()
+            contenido = " ".join(list(map(lambda x: x.strip(), contenido))).split("#")
+            while '' in contenido: contenido.remove('')
+            contenido = list(map(lambda x: x.strip(), contenido))
+            for elemento in contenido:
+                if 'alphabet' in elemento: self.Sigma = sorted(elemento.split(' ')[1:])
+                if 'states' in elemento: self.Q = sorted(elemento.split(' ')[1:])
+                if 'initial' in elemento: self.q0 = elemento.split(' ')[1]
+                if 'accepting' in elemento: self.F = sorted(elemento.split(' ')[1:])
+                if 'transitions' in elemento: self.delta = sorted(elemento.split(' ')[1:])
+            if '-' in self.Sigma[0]:
+                self.Sigma = [*self.Sigma, *self.rangoLenguaje(self.Sigma[0])]
+                self.Sigma.pop(0)
+                self.Sigma = sorted(self.Sigma)
+            self.creacionDelta()
+            self.estadosLimbo = self.hallarEstadosLimbo()
+            self.estadosInaccesibles = self.hallarEstadosInaccesibles()
+        else:
+            self.Sigma = kwargs.get("alfabeto")
+            self.Q = kwargs.get("estados")
+            self.q0 = kwargs.get("estadoInicial")
+            self.F = kwargs.get("estadosAceptacion")
+            self.delta = kwargs.get("transiciones")
+            if None in (self.Sigma,self.Q,self.q0,self.F,self.delta): raise ValueError("Faltan parámetros requeridos")
+            self.creacionDelta()
+            self.estadosLimbo = self.hallarEstadosLimbo()
+            self.estadosInaccesibles = self.hallarEstadosInaccesibles()
 
-    def __init__(self, nombreArchivo):
-        with open(nombreArchivo) as f:
-            contenido = f.readlines()
-        contenido = " ".join(list(map(lambda x: x.strip(), contenido))).split("#")
-        while '' in contenido: contenido.remove('')
-        contenido = list(map(lambda x: x.strip(), contenido))
-        for elemento in contenido:
-            if 'alphabet' in elemento: self.Sigma = sorted(elemento.split(' ')[1:])
-            if 'states' in elemento: self.Q = sorted(elemento.split(' ')[1:])
-            if 'initial' in elemento: self.q0 = elemento.split(' ')[1]
-            if 'accepting' in elemento: self.F = sorted(elemento.split(' ')[1:])
-            if 'transitions' in elemento: self.delta = sorted(elemento.split(' ')[1:])
-        if '-' in self.Sigma[0]:
-            self.Sigma = [*self.Sigma, *self.rangoLenguaje(self.Sigma[0])]
-            self.Sigma.pop(0)
-            self.Sigma = sorted(self.Sigma)
-        self.creacionDelta()
-        self.estadosLimbo = self.hallarEstadosLimbo()
-        self.estadosInaccesibles = self.hallarEstadosInaccesibles()
 
     def rangoLenguaje(self, lenguaje):
         return [chr(caracter) for caracter in range(ord(lenguaje[0]), ord(lenguaje[-1]) + 1)]
@@ -322,6 +327,22 @@ class AFD:
             return self.hallarProductoCartesianoDiferenciaSimetrica(afd1, afd2)
         else:
             raise Exception(f"No existe el producto cartesiano de tipo {operacion}")
+
+    def eliminarEstadosInaccesibles(self):
+        self.estadosInaccesibles = self.hallarEstadosInaccesibles()
+        while self.estadosInaccesibles:
+            x = self.estadosInaccesibles[0]
+            self.delta = np.delete(self.delta, self.Q.index(x), 0)
+            self.Q.remove(x)
+            self.estadosInaccesibles = self.hallarEstadosInaccesibles()
+
+    def eliminarEstadosLimbo(self):
+        self.estadosLimbo = self.hallarEstadosLimbo()
+        while self.estadosLimbo:
+            x = self.estadosLimbo[0]
+            self.delta = np.delete(self.delta, self.Q.index(x), 0)
+            self.Q.remove(x)
+            self.estadosLimbo = self.hallarEstadosLimbo()
 
     def __str__(self):
         return self.toString()
