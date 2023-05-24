@@ -120,18 +120,19 @@ class AFN(AFD):
         return False
 
     def procesarCadenaConDetalles(self,cadena):
-        if self.procesamientoConDetalles(cadena,self.q0): print("Aceptación")
+        resultado=self.procesamientoConDetalles(cadena,self.q0,list())
+        if resultado[0]: print("->".join(reversed(resultado[1]))+"->Aceptación")
         else: print("No aceptación")
 
-    def procesamientoConDetalles(self,cadena,current_state):
-        if cadena == '': return current_state in self.F
+    def procesamientoConDetalles(self,cadena,current_state,procesamiento):
+        if cadena == '': return current_state in self.F,procesamiento
         transiciones = self.delta[self.Q.index(current_state), self.Sigma.index(cadena[0])]
         next_states = [state for state in transiciones.split(';')]
         for next_state in next_states:
-            if self.procesamientoConDetalles(cadena[1:],next_state):
-                print(f"[{next_state},{cadena}]", end="<-")
-                return True
-        return False
+            if self.procesamientoConDetalles(cadena[1:],next_state,procesamiento)[0]:
+                procesamiento.append(f"[{next_state},{cadena}]")
+                return True,procesamiento
+        return False,procesamiento
 
     def procesarListaCadenas(self,listaCadenas,nombreArchivo,imprimirPantalla):
         proceso=list()
@@ -158,4 +159,4 @@ class AFN(AFD):
     def __str__(self): return "#!nfa"+self.toString()[5:]
 
 a=AFN(nombreArchivo="afn.nfa")
-a.procesarCadenaConDetalles("aabb")
+a.procesarCadenaConDetalles("aaaa")
