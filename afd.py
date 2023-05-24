@@ -40,7 +40,7 @@ class AFD:
             self.q0 = kwargs.get("estadoInicial")
             self.F = kwargs.get("estadosAceptacion")
             self.delta = kwargs.get("transiciones")
-            if None in (self.Sigma,self.Q,self.q0,self.F,self.delta): raise ValueError("Faltan parámetros requeridos")
+            if None in (self.Sigma,self.Q,self.q0,self.F,self.delta): raise ValueError("Faltan parámetros requeridos o están en formato incorrecto")
             self.creacionDelta()
             self.estadosLimbo = self.hallarEstadosLimbo()
             self.estadosInaccesibles = self.hallarEstadosInaccesibles()
