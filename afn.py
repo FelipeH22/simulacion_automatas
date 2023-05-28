@@ -52,7 +52,7 @@ class AFN(AFD):
         g_s.node('i',label='',shape="point")
         g_s.edge('i',self.q0,arrowsize='0.5')
         for x in self.Q:
-            if x in self.F:
+            if x in self.F and x not in self.estadosInaccesibles:
                 g_s.node(x,shape="doublecircle")
             elif x!='l' and x not in self.estadosInaccesibles:
                 g_s.node(x,shape="circle")
@@ -248,6 +248,5 @@ class AFN(AFD):
         a = copy.deepcopy(self)
         b = self.AFNtoAFD(a)
         return b.procesarListaCadenas(listaCadenas,nombreArchivo,imprimitPantalla)
-
 
     def __str__(self): return "#!nfa"+self.toString()[5:]
