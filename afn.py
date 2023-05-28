@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from graphviz import Digraph,Source
+from collections import deque
 from afd import AFD
 import numpy as np
 import copy
@@ -77,34 +78,34 @@ class AFN(AFD):
         s.view()
 
     def AFNtoAFD(self, afn):
-        afd=copy.deepcopy(afn)
-        alfabeto=afd.Sigma
-        estados=afd.Q
-        estadoInicial=afd.q0
-        estadosAceptacion=afd.F
-        transiciones=afd.delta
-        previous_size=transiciones.shape
-        current_size=(0,0)
-        while previous_size!=current_size:
+        afd = copy.deepcopy(afn)
+        alfabeto = afd.Sigma
+        estados = afd.Q
+        estadoInicial = afd.q0
+        estadosAceptacion = afd.F
+        transiciones = afd.delta
+        previous_size = transiciones.shape
+        current_size = (0, 0)
+        while previous_size != current_size:
             previous_size = transiciones.shape
             for i in range(len(estados)):
                 for j in range(len(alfabeto)):
-                    if ";" in transiciones[i,j] and transiciones[i,j] not in estados:
-                        estados.append(transiciones[i,j])
+                    if ";" in transiciones[i, j] and transiciones[i, j] not in estados:
+                        estados.append(transiciones[i, j])
                         transiciones = np.vstack((transiciones, ["empt" for _ in range(len(alfabeto))]))
-                        est=transiciones[i,j].split(";")
+                        est = set(transiciones[i, j].split(";"))
                         for x in est:
+                            if x in estadosAceptacion: estadosAceptacion.append(transiciones[i,j])
                             for z in range(len(alfabeto)):
-                                if transiciones[-1,z]=="empt" or transiciones[-1,z]=='l': transiciones[-1,z]=transiciones[estados.index(x),z]
-                                elif transiciones[-1,z]!='l':
-                                    if 'l' in transiciones[estados.index(x), z]: continue
-                                    transiciones[-1,z]=transiciones[-1,z]+";"+transiciones[estados.index(x),z]
-            current_size=transiciones.shape
-        afd.delta=transiciones
-        transiciones=afd.retornarTransiciones()
-        afd_equivalente=AFD(alfabeto=alfabeto,estados=estados,estadoInicial=estadoInicial,estadosAceptacion=estadosAceptacion,transiciones=transiciones)
+                                if transiciones[-1, z] == "empt" or transiciones[-1, z] == 'l':
+                                    transiciones[-1, z] = transiciones[estados.index(x), z]
+                                elif 'l' not in transiciones[-1, z] and 'l' not in transiciones[estados.index(x), z]:
+                                        transiciones[-1, z] = ';'.join(sorted(set(transiciones[-1, z].split(';')).union(set(transiciones[estados.index(x), z].split(';')))))
+            current_size = transiciones.shape
+        afd.delta = transiciones
+        afd_equivalente = AFD(alfabeto=alfabeto, estados=estados, estadoInicial=estadoInicial,
+                              estadosAceptacion=estadosAceptacion, transiciones=afd.delta, deltaEnFormato=True)
         afd_equivalente.eliminarEstadosInaccesibles()
-        afd_equivalente.eliminarEstadosLimbo()
         return afd_equivalente
 
     def procesarCadena(self,cadena):
@@ -134,29 +135,119 @@ class AFN(AFD):
                 return True,procesamiento
         return False,procesamiento
 
+    def computarTodosLosProcesamientos(self,cadena,nombreArchivo):
+        start_state = self.q0
+        accepted = list()
+        rejected = list()
+        aborted = list()
+        def dfs(current_states, remaining_input, current_route):
+            if remaining_input == "":
+                final_states = set(current_states.split(";"))
+                if final_states.intersection(self.F):
+                    accepted.append(current_route)
+                else:
+                    rejected.append(current_route)
+                return
+            current_char = remaining_input[0]
+            char_index = self.Sigma.index(current_char)
+            for next_state in current_states.split(";"):
+                if next_state == 'l':
+                    aborted.append(current_route+[f"['l',{remaining_input[:]}]"])
+                else:
+                    next_states = self.delta[self.Q.index(next_state), char_index]
+                    next_route = f"[{next_state},{remaining_input[:]}]"
+                    dfs(next_states, remaining_input[1:], current_route + [next_route])
+        current_route = list()
+        dfs(str(start_state), cadena, current_route)
+        with open(f"{nombreArchivo}Aceptadas.txt", "w") as file:
+            for route in accepted:
+                resultado="->".join(route) + "->Aceptación" +"\n"
+                file.write(resultado)
+                print(resultado)
+        with open(f"{nombreArchivo}Rechazadas.txt", "w") as file:
+            for route in rejected:
+                resultado = "->".join(route) + "->No Aceptación" + "\n"
+                file.write(resultado)
+                print(resultado)
+        with open(f"{nombreArchivo}Abortadas.txt", "w") as file:
+            for route in aborted:
+                resultado = "->".join(route) + "->Abortado" + "\n"
+                file.write(resultado)
+                print(resultado)
+        return len(accepted)+len(rejected)+len(aborted)
+
     def procesarListaCadenas(self,listaCadenas,nombreArchivo,imprimirPantalla):
-        proceso=list()
+        start_state = self.q0
+        accepted = list()
+        rejected = list()
+        aborted = list()
+        def dfs(current_states, remaining_input, current_route):
+            if remaining_input == "":
+                final_states = set(current_states.split(";"))
+                if final_states.intersection(self.F):
+                    accepted.append(current_route)
+                else:
+                    rejected.append(current_route)
+                return
+            current_char = remaining_input[0]
+            char_index = self.Sigma.index(current_char)
+            for next_state in current_states.split(";"):
+                if next_state == 'l':
+                    aborted.append(current_route + [f"['l',{remaining_input[:]}]"])
+                else:
+                    next_states = self.delta[self.Q.index(next_state), char_index]
+                    next_route = f"[{next_state},{remaining_input[:]}]"
+                    dfs(next_states, remaining_input[1:], current_route + [next_route])
+
         for cadena in listaCadenas:
-            resultado=str()
-            estado_actual=self.q0
-            cadena_=cadena
-            for elemento in cadena:
-                if cadena_!='':resultado+=f"[{estado_actual},{cadena_}] -> "
-                estado_actual=self.delta[self.Q.index(estado_actual),self.Sigma.index(elemento)]
-                cadena_=cadena_[1:]
-            if estado_actual in self.F:resultado+='si'
-            else: resultado+='no'
-            proceso.append(resultado)
-            if imprimirPantalla: print(resultado)
-        try:
-            with open(nombreArchivo,'w') as file:
-                file.write("\n".join(proceso))
-        except:
-            with open("salidaProcesamiento.txt",'w') as file:
-                file.write("\n".join(proceso))
+            current_route = list()
+            dfs(str(start_state), cadena, current_route)
+            try:
+                with open(f"{nombreArchivo}.txt",'a') as file:
+                    file.write(cadena+"\n")
+                    for route in accepted:
+                        resultado = "->".join(route) + "->Aceptación" + "\n"
+                        file.write(resultado)
+                        if imprimirPantalla: print(resultado)
+                    for route in rejected:
+                        resultado = "->".join(route) + "->No Aceptación" + "\n"
+                        file.write(resultado)
+                        if imprimirPantalla: print(resultado)
+                    for route in aborted:
+                        resultado = "->".join(route) + "->Abortado" + "\n"
+                        file.write(resultado)
+                        if imprimirPantalla: print(resultado)
+            except:
                 print(f"El nombre de archivo '{nombreArchivo}' es invalido, guardando en salidaProcesamiento.txt")
+                with open(f"{nombreArchivo}.txt", 'a') as file:
+                    file.write(cadena + "\n")
+                    for route in accepted:
+                        resultado = "->".join(route) + "->Aceptación" + "\n"
+                        file.write(resultado)
+                        if imprimirPantalla: print(resultado)
+                    for route in rejected:
+                        resultado = "->".join(route) + "->No Aceptación" + "\n"
+                        file.write(resultado)
+                        if imprimirPantalla: print(resultado)
+                    for route in aborted:
+                        resultado = "->".join(route) + "->Abortado" + "\n"
+                        file.write(resultado)
+                        if imprimirPantalla: print(resultado)
+
+    def procesarCadenaConversion(self,cadena):
+        a=copy.deepcopy(self)
+        b=self.AFNtoAFD(a)
+        return b.procesarCadena(cadena)
+
+    def procesarCadenaConDetallesConversion(self,cadena):
+        a = copy.deepcopy(self)
+        b = self.AFNtoAFD(a)
+        return b.procesarCadenaConDetalles(cadena)
+
+    def procesarListaCadenasConversion(self,listaCadenas,nombreArchivo,imprimitPantalla):
+        a = copy.deepcopy(self)
+        b = self.AFNtoAFD(a)
+        return b.procesarListaCadenas(listaCadenas,nombreArchivo,imprimitPantalla)
+
 
     def __str__(self): return "#!nfa"+self.toString()[5:]
-
-a=AFN(nombreArchivo="afn.nfa")
-a.procesarCadenaConDetalles("aaaa")

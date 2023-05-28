@@ -30,7 +30,7 @@ class AFD:
             if '-' in self.Sigma[0]:
                 self.Sigma = [*self.Sigma, *self.rangoLenguaje(self.Sigma[0])]
                 self.Sigma.pop(0)
-                self.Sigma = sorted(self.Sigma)
+            self.Sigma = sorted(self.Sigma)
             self.creacionDelta()
             self.estadosLimbo = self.hallarEstadosLimbo()
             self.estadosInaccesibles = self.hallarEstadosInaccesibles()
@@ -40,11 +40,10 @@ class AFD:
             self.q0 = kwargs.get("estadoInicial")
             self.F = kwargs.get("estadosAceptacion")
             self.delta = kwargs.get("transiciones")
-            if None in (self.Sigma,self.Q,self.q0,self.F,self.delta): raise ValueError("Faltan parámetros requeridos o están en formato incorrecto")
-            self.creacionDelta()
+            if None in (self.Sigma,self.Q,self.q0,self.F): raise ValueError("Faltan parámetros requeridos o están en formato incorrecto")
+            if "deltaEnFormato" not in kwargs: self.creacionDelta()
             self.estadosLimbo = self.hallarEstadosLimbo()
             self.estadosInaccesibles = self.hallarEstadosInaccesibles()
-
 
     def rangoLenguaje(self, lenguaje):
         return [chr(caracter) for caracter in range(ord(lenguaje[0]), ord(lenguaje[-1]) + 1)]
@@ -181,7 +180,7 @@ class AFD:
             proceso.append(resultado)
             if imprimirPantalla: print(resultado)
         try:
-            with open(nombreArchivo, 'w') as file:
+            with open(f"{nombreArchivo}.txt", 'w') as file:
                 file.write("\n".join(proceso))
         except:
             with open("salidaProcesamiento.txt", 'w') as file:
