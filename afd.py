@@ -31,6 +31,8 @@ class AFD:
                 self.Sigma = [*self.Sigma, *self.rangoLenguaje(self.Sigma[0])]
                 self.Sigma.pop(0)
             self.Sigma = sorted(self.Sigma)
+            if "esLambda" in kwargs:
+                if kwargs.get("esLambda") == True: self.Sigma.append('$')
             self.creacionDelta()
             self.estadosLimbo = self.hallarEstadosLimbo()
             self.estadosInaccesibles = self.hallarEstadosInaccesibles()
@@ -44,6 +46,7 @@ class AFD:
             if "deltaEnFormato" not in kwargs: self.creacionDelta()
             self.estadosLimbo = self.hallarEstadosLimbo()
             self.estadosInaccesibles = self.hallarEstadosInaccesibles()
+
 
     def rangoLenguaje(self, lenguaje):
         return [chr(caracter) for caracter in range(ord(lenguaje[0]), ord(lenguaje[-1]) + 1)]
@@ -117,7 +120,7 @@ class AFD:
         g_s.node('i', label='', shape="point")
         g_s.edge('i', self.q0, arrowsize='0.5')
         for x in self.Q:
-            if x in self.F:
+            if x in self.F and x not in self.estadosInaccesibles:
                 g_s.node(x, shape="doublecircle")
             elif x != 'l' and x not in self.estadosInaccesibles:
                 g_s.node(x, shape="circle")
