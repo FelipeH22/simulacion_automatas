@@ -1,0 +1,1 @@
+[q0,aaaa]->[q0,aaa]->[q0,aa]->[q3,a]->No Aceptación

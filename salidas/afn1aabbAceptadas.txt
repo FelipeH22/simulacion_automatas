@@ -1,0 +1,3 @@
+[q0,aabb]->[q0,abb]->[q1,bb]->[q2,b]->Aceptación
+[q0,aabb]->[q0,abb]->[q3,bb]->[q3,b]->Aceptación
+[q0,aabb]->[q1,abb]->[q1,bb]->[q2,b]->Aceptación
