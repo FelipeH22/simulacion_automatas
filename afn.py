@@ -90,19 +90,22 @@ class AFN(AFD):
             previous_size = transiciones.shape
             for i in range(len(estados)):
                 for j in range(len(alfabeto)):
-                    if ";" in transiciones[i, j] and transiciones[i, j] not in estados:
-                        estados.append(transiciones[i, j])
+                    if ";" in transiciones[i, j] and ';'.join(sorted(transiciones[i, j].split(';'))) not in estados:
+                        estados.append(';'.join(sorted(transiciones[i, j].split(';'))))
                         transiciones = np.vstack((transiciones, ["empt" for _ in range(len(alfabeto))]))
-                        est = set(transiciones[i, j].split(";"))
+                        est = set(sorted(transiciones[i, j].split(";")))
                         for x in est:
-                            if x in estadosAceptacion: estadosAceptacion.append(transiciones[i,j])
+                            if x in estadosAceptacion: estadosAceptacion.append(';'.join(sorted(transiciones[i, j].split(';'))))
                             for z in range(len(alfabeto)):
                                 if transiciones[-1, z] == "empt" or transiciones[-1, z] == 'l':
                                     transiciones[-1, z] = transiciones[estados.index(x), z]
                                 elif 'l' not in transiciones[-1, z] and 'l' not in transiciones[estados.index(x), z]:
-                                        transiciones[-1, z] = ';'.join(sorted(set(transiciones[-1, z].split(';')).union(set(transiciones[estados.index(x), z].split(';')))))
+                                    transiciones[-1, z] = ';'.join(set(transiciones[-1, z].split(';')).union(set(transiciones[estados.index(x), z].split(';'))))
             current_size = transiciones.shape
         afd.delta = transiciones
+        for i in range(len(afd.delta)):
+            for j in range(len(afd.delta[0])):
+                if ';' in afd.delta[i,j]: afd.delta[i,j]=';'.join(sorted(afd.delta[i,j].split(';')))
         afd_equivalente = AFD(alfabeto=alfabeto, estados=estados, estadoInicial=estadoInicial,
                               estadosAceptacion=estadosAceptacion, transiciones=afd.delta, deltaEnFormato=True)
         afd_equivalente.eliminarEstadosInaccesibles()
