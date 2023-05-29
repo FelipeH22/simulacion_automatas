@@ -75,12 +75,41 @@ class AFNLambda(AFN):
 
     def procesarCadena(self,cadena):
         a=copy.deepcopy(self)
-        b=a.AFN_LambdaToAFN(a)
+        b=a.AFN_LambdaToAFN(a,False)
         return b.procesarCadena(cadena)
 
+    def procesarCadenaConDetalles(self,cadena):
+        a = copy.deepcopy(self)
+        b = a.AFN_LambdaToAFN(a, False)
+        return b.procesarCadenaConDetalles(cadena)
+
+    def computarTodosLosProcesamientos(self,cadena,nombreArchivo):
+        a = copy.deepcopy(self)
+        b = a.AFN_LambdaToAFN(a, False)
+        return b.computarTodosLosProcesamientos(cadena,nombreArchivo)
+
+    def procesarListaCadenas(self,listaCadenas,nombreArchivo,imprimirPantalla):
+        a = copy.deepcopy(self)
+        b = a.AFN_LambdaToAFN(a, False)
+        return b.procesarListaCadenas(listaCadenas,nombreArchivo,imprimirPantalla)
+
+    def procesarCadenaConversion(self,cadena):
+        a = copy.deepcopy(self)
+        b = a.AFN_LambdaToAFN(a, False)
+        c = b.AFNtoAFD(b)
+        return c.procesarCadena(cadena)
+
+    def procesarCadenaConDetallesConversion(self,cadena):
+        a = copy.deepcopy(self)
+        b = a.AFN_LambdaToAFN(a, False)
+        c = b.AFNtoAFD(b)
+        return c.procesarCadenaConDetalles(cadena)
+
+    def procesarListaCadenasConversion(self,listaCadenas,nombreArchivo,imprimirPantalla):
+        a = copy.deepcopy(self)
+        b = a.AFN_LambdaToAFN(a, False)
+        c = b.AFNtoAFD(b)
+        return c.procesarListaCadenas(listaCadenas,nombreArchivo,imprimirPantalla)
 
     def __str__(self):
         return "#!nfe" + self.toString()[5:]
-
-
-a = AFNLambda(nombreArchivo="afnl.nfe")
