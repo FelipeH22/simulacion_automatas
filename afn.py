@@ -22,7 +22,7 @@ class AFN(AFD):
         transiciones=self.manejarTransiciones(self.retornarTransiciones())
         transiciones=self.limpiaTransiciones(transiciones)
         landing_states=[x[2] for x in transiciones]
-        return [x for x in self.Q if x not in landing_states]
+        return [x for x in self.Q if x not in landing_states and x!=self.q0]
 
     def retornarTransiciones(self):
         transiciones=list()
@@ -123,20 +123,28 @@ class AFN(AFD):
                 return True
         return False
 
-    def procesarCadenaConDetalles(self,cadena):
-        resultado=self.procesamientoConDetalles(cadena,self.q0,list())
-        if resultado[0]: print("->".join(reversed(resultado[1]))+"->Aceptación")
-        else: print("No aceptación")
+    def procesarCadenaConDetalles(self, cadena):
+        resultado = self.procesamientoConDetalles(cadena, self.q0, [])
+        if resultado[0]:
+            print("->".join(resultado[1]) + "->Aceptación")
+        else:
+            print("No aceptación")
 
-    def procesamientoConDetalles(self,cadena,current_state,procesamiento):
-        if cadena == '': return current_state in self.F,procesamiento
+    def procesamientoConDetalles(self, cadena, current_state, procesamiento):
+        if cadena == '':
+            return current_state in self.F, procesamiento + [f"[{current_state},]"]
+
         transiciones = self.delta[self.Q.index(current_state), self.Sigma.index(cadena[0])]
         next_states = [state for state in transiciones.split(';')]
+
         for next_state in next_states:
-            if self.procesamientoConDetalles(cadena[1:],next_state,procesamiento)[0]:
-                procesamiento.append(f"[{next_state},{cadena}]")
-                return True,procesamiento
-        return False,procesamiento
+            new_procesamiento = procesamiento + [f"[{current_state},{cadena}]"]
+            result, path = self.procesamientoConDetalles(cadena[1:], next_state, new_procesamiento)
+
+            if result:
+                return True, path
+
+        return False, procesamiento
 
     def computarTodosLosProcesamientos(self,cadena,nombreArchivo):
         start_state = self.q0
@@ -252,4 +260,6 @@ class AFN(AFD):
         b = self.AFNtoAFD(a)
         return b.procesarListaCadenas(listaCadenas,nombreArchivo,imprimitPantalla)
 
-    def __str__(self): return "#!nfa"+self.toString()[5:]
+    def __str__(self):
+        self.mostrarGrafoSimplificado("afn")
+        return "#!nfa"+self.toString()[5:]

@@ -1,0 +1,14 @@
+aba
+[q0,aba]->[q0,ba]->[q1,a]->Aceptación
+[q0,aba]->[q2,ba]->[q1,a]->Aceptación
+[q0,aba]->[q0,ba]->[q3,a]->No Aceptación
+[q0,aba]->[q2,ba]->[q3,a]->No Aceptación
+[q0,aba]->[q3,ba]->[q3,a]->No Aceptación
+bb
+[q0,aba]->[q0,ba]->[q1,a]->Aceptación
+[q0,aba]->[q2,ba]->[q1,a]->Aceptación
+[q0,bb]->[q3,b]->Aceptación
+[q0,aba]->[q0,ba]->[q3,a]->No Aceptación
+[q0,aba]->[q2,ba]->[q3,a]->No Aceptación
+[q0,aba]->[q3,ba]->[q3,a]->No Aceptación
+[q0,bb]->[q1,b]->No Aceptación

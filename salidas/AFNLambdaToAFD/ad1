@@ -1,0 +1,11 @@
+digraph {
+	rankdir=LR
+	i [label="" shape=point]
+	i -> q0 [arrowsize=0.5]
+	q0 [shape=circle]
+	q3 [shape=doublecircle]
+	"q1;q2" [shape=circle]
+	q0 -> "q1;q2" [label=a arrowsize=0.5]
+	"q1;q2" -> q3 [label=a arrowsize=0.5]
+	"q1;q2" -> "q1;q2" [label=b arrowsize=0.5]
+}

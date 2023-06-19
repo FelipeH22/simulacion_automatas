@@ -1,0 +1,2 @@
+[q0,abb]->[q0,bb]->[q1,b]->No Aceptación
+[q0,abb]->[q2,bb]->[q1,b]->No Aceptación

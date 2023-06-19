@@ -74,14 +74,57 @@ class AFNLambda(AFN):
         return afd
 
     def procesarCadena(self,cadena):
-        a=copy.deepcopy(self)
-        b=a.AFN_LambdaToAFN(a,False)
-        return b.procesarCadena(cadena)
+        alphabet = self.Sigma
+        if '$' in alphabet: alphabet.remove('$')
+        states = self.Q
+        current_states = {self.q0}
+        for char in cadena:
+            next_states = set()
+            for state in current_states:
+                col_idx = alphabet.index(char)
+                next_state_str = self.delta[states.index(state)][col_idx]
+                next_states.update(next_state_str.split(';'))
+            current_states = next_states
+        while True:
+            next_states = set()
+            for state in current_states:
+                eps_idx = len(alphabet)
+                next_state_str = self.delta[states.index(state)][eps_idx]
+                next_states.update(next_state_str.split(';'))
+            if not next_states - current_states:
+                break
+            current_states.update(next_states)
+        final_states = {x for x in self.F}
+        if current_states.intersection(final_states):
+            return True
+        else:
+            return False
 
-    def procesarCadenaConDetalles(self,cadena):
-        a = copy.deepcopy(self)
-        b = a.AFN_LambdaToAFN(a, False)
-        return b.procesarCadenaConDetalles(cadena)
+    def procesarCadenaConDetalles(self, cadena):
+        alphabet = copy.deepcopy(self.Sigma)
+        states = copy.deepcopy(self.Q)
+        initial_state = copy.deepcopy(self.q0)
+        final_states = {x for x in self.F}
+        if '$' in alphabet: alphabet.remove('$')
+        stack = [(initial_state, cadena, [])]
+        while stack:
+            current_state, remaining_string, path = stack.pop()
+            if not remaining_string:
+                if current_state in final_states:
+                    path.append(f"[{current_state},{remaining_string}]")
+                    accepting_path = "->".join(path)
+                    print(f"{accepting_path} -> Aceptación")
+                    return True
+                else:
+                    continue
+            char = remaining_string[0]
+            col_idx = alphabet.index(char)
+            next_state_str = self.delta[states.index(current_state)][col_idx]
+            next_states = next_state_str.split(';')
+            for state in next_states:
+                stack.append((state, remaining_string[1:], path + [f"[{current_state},{remaining_string}]"]))
+        print("No Aceptación")
+        return False
 
     def computarTodosLosProcesamientos(self,cadena,nombreArchivo):
         a = copy.deepcopy(self)
@@ -112,4 +155,5 @@ class AFNLambda(AFN):
         return c.procesarListaCadenas(listaCadenas,nombreArchivo,imprimirPantalla)
 
     def __str__(self):
+        self.mostrarGrafoSimplificado("afnl")
         return "#!nfe" + self.toString()[5:]
