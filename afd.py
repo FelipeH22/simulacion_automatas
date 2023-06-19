@@ -108,7 +108,7 @@ class AFD:
             f.write(contenido)
 
     def toString(self):
-        self.mostrarGrafo()
+
         return "#!dfa\n" + "#alphabet\n" + "\n".join(self.Sigma) + "\n#states\n" + "\n".join(
             self.Q) + "\n#initial\n" + f"{self.q0}\n" + \
             "#accepting\n" + "\n".join(self.F) + "\n#transitions\n" + "\n".join(self.retornarTransiciones())
@@ -325,7 +325,7 @@ class AFD:
             return self.hallarProductoCartesianoO(afd1, afd2)
         elif operacion == "diferencia":
             return self.hallarProductoCartesianoDiferencia(afd1, afd2)
-        elif operacion == "diferencia simétrica":
+        elif operacion == "diferencia_simetrica":
             return self.hallarProductoCartesianoDiferenciaSimetrica(afd1, afd2)
         else:
             raise Exception(f"No existe el producto cartesiano de tipo {operacion}")
@@ -346,5 +346,10 @@ class AFD:
             self.Q.remove(x)
             self.estadosLimbo = self.hallarEstadosLimbo()
 
+    def simplificarAFD(self,afdInput):
+        pass
+
+
     def __str__(self):
+        self.mostrarGrafoSimplificado("afd")
         return self.toString()

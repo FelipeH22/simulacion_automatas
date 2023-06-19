@@ -1,0 +1,2 @@
+[q0,aabb]->[q0,abb]->[q0,bb]->['l',b]->Abortado
+[q0,aabb]->[q3,abb]->['l',bb]->Abortado
