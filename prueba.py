@@ -1,6 +1,7 @@
 from afd import AFD
 from afn import AFN
 from afnl import AFNLambda
+from afpd import AFPD
 import numpy as np
 
 class clasePrueba:
@@ -160,9 +161,12 @@ class clasePrueba:
         y_simplificado = y.simplificarAFD(y)
         y_simplificado.mostrarGrafoSimplificado("./salidas/simplificacion/y_simplificado")
 
-
-
-
+    def probarAFPD(self):
+        ap = self.cargarAutomata(AFPD,nombreArchivo="./automatas/afp.dpda")  # #a=#b.
+        ap.procesarCadenaConDetalles("abbb")
+        ap.procesarCadenaConDetalles("ab")
+        ap.procesarCadenaConDetalles("aaabb")
+        ap.procesarCadenaConDetalles("aaabbb")
 
     def main(self):
         #self.probarAFD()
@@ -174,6 +178,7 @@ class clasePrueba:
         #self.probarComplemento()
         #self.probarProductoCartesiano()
         #self.probarSimplificacion()
+        self.probarAFPD()
 
 
 

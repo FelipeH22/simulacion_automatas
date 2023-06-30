@@ -346,10 +346,6 @@ class AFD:
             self.Q.remove(x)
             self.estadosLimbo = self.hallarEstadosLimbo()
 
-    def simplificarAFD(self,afdInput):
-        pass
-
-
     def __str__(self):
         self.mostrarGrafoSimplificado("afd")
         return self.toString()

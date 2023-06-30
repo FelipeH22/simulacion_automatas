@@ -10,5 +10,7 @@
     <file url="file://$PROJECT_DIR$/salidas/AFNL/an1Lista.txt" charset="windows-1252" />
     <file url="file://$PROJECT_DIR$/salidas/AFNL/an1abbAceptadas.txt" charset="windows-1252" />
     <file url="file://$PROJECT_DIR$/salidas/AFNL/an1abbRechazadas.txt" charset="windows-1252" />
+    <file url="file://$PROJECT_DIR$/zzzAbortadasAFPN.txt" charset="windows-1252" />
+    <file url="file://$PROJECT_DIR$/zzzAceptadasAFPN.txt" charset="windows-1252" />
   </component>
 </project>

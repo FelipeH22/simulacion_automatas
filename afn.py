@@ -7,7 +7,6 @@ import copy
 import re
 
 class AFN(AFD):
-
     def limpiaTransiciones(self,transiciones):
         new_transiciones=list()
         for i in range(len(transiciones)):
@@ -58,6 +57,7 @@ class AFN(AFD):
                 g_s.node(x,shape="circle")
         new_transiciones=self.limpiaTransiciones(transiciones)
         for x in new_transiciones:
+            if x[1]=='$': x[1]='\u03BB'
             if 'l' not in x and x[0] not in self.estadosInaccesibles and x[2] not in self.estadosInaccesibles: g_s.edge(x[0],x[2],label=x[1],arrowsize='0.5')
         s=Source(g_s.source,filename=archivo,format="svg")
         s.view()
@@ -73,6 +73,7 @@ class AFN(AFD):
             else: g.node(x,shape="circle")
         new_transiciones=self.limpiaTransiciones(transiciones)
         for x in new_transiciones:
+            if x[1]=='$': x[1]='\u03BB'
             g.edge(x[0],x[2],label=x[1],arrowsize='0.5')
         s=Source(g.source,filename=archivo,format="svg")
         s.view()
